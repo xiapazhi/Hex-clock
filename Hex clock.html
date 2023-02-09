@@ -56,6 +56,14 @@
    </div>
 
    <script>
+      function completeTo6 (color) {
+         if (color.length < 6) {
+            for (let i = 0; i < 6 - color.length; i++) {
+               color = '0' + color
+            }
+         }
+         return color
+      }
       function refresh () {
          x = 1;  // x = seconds
          var d = new Date()
@@ -69,13 +77,10 @@
          // if (s <= 9) { s = '0' + s };
          // var color =  + h + m + s;
 
+         // 当天总的seconds转为16进制颜色
          let daySeconds = h * 60 * 60 + m * 60 + s
          color = (daySeconds).toString(16)
-         if (color.length < 6) {
-            for (let i = 0; i < 6 - color.length; i++) {
-               color = '0' + color
-            }
-         }
+         color = completeTo6(color)
 
          var textShadowColor = '#' + color.split("").reverse().join("");
 
