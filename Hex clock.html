@@ -8,8 +8,7 @@
    <title>Hex clock</title>
    <link rel="shortcut icon" href="http://www.jacopocolo.com/favicon.ico" type="image/x-icon">
    <meta name="Keywords" content="Jacopo Colò, Jacopo Colo, hex, clock, hexadecimal, colors">
-   <meta name="description"
-      content="A precise hexadecimal color clock that goes the whole 24 hours color range, from #000000 to #235959.">
+   <meta name="description" content="A precise hexadecimal color clock that goes the whole 24 hours color range">
    <style>
       html body {
          margin: 0;
@@ -19,13 +18,14 @@
       }
 
       #background {
-         width: 100%;
-         height: 100%;
-         position: absolute;
-         vertical-align: middle;
+         width: 100vw;
+         height: 100vh;
+         display: flex;
+         justify-content: center;
+         align-items: center;
       }
 
-      #hex {
+      .hex {
          color: white;
          font-family: cursive;
          text-align: center;
@@ -35,41 +35,100 @@
          font-weight: 100;
       }
 
-      #absolute-center {
-         /*width: 50%;*/
-         margin: auto;
+      .word {
          position: absolute;
-         top: 50%;
-         left: 50%;
-         -webkit-transform: translate(-50%, -50%);
-         -ms-transform: translate(-50%, -50%);
-         transform: translate(-50%, -50%);
+         display: flex;
+         opacity: 0; 
+      }
+
+      .word .letter {
+         transform-origin: center center 25px;
+      }
+
+      .word .letter.out {
+         transform: rotateX(90deg);
+         transition: 0.32s cubic-bezier(0.6, 0, 0.7, 0.2);
+      }
+
+      .word .letter.in {
+         transition: 0.38s ease;
+      }
+
+      .word .letter.behind {
+         transform: rotateX(-90deg);
+      }
+
+      #color-show {
+         text-shadow: 3px -2px 6px #D42251;
       }
    </style>
 </head>
 
 <body>
    <div id="background" style="background-color: rgb(21, 34, 77);">
-      <div id="absolute-center">
-         <p id="hex" style="text-shadow: 3px -2px 6px #D42251;">#15224D</p>
-      </div>
+      <p id="color-show" class="hex word">#GGGGGG</p>
+      <p id="color-hidden" class="hex word">#GGGGGG</p>
    </div>
 
    <script>
+      var words = document.querySelectorAll(".word");
+      words.forEach(function (word) {
+         var letters = word.textContent.split("");
+         word.textContent = "";
+         letters.forEach(function (letter) {
+            var span = document.createElement("span");
+            span.textContent = letter;
+            span.className = "letter";
+            word.append(span);
+         });
+      });
+
       function completeTo6 (color) {
          if (color.length < 6) {
-            for (let i = 0; i < 6 - color.length; i++) {
+            for (let i = 0; i <= 6 - color.length; i++) {
                color = '0' + color
             }
          }
          return color
       }
+      function packageToSpan (color) {
+         let newColor = ''
+         for (let i = 0; i < color.length; i++) {
+            newColor += '<span class="">' + color[i] + '</span>'
+         }
+         return newColor
+      }
+
+      function rotateText () {
+         var currentWord = document.getElementById('color-show');
+         var nextWord = document.getElementById('color-hidden');
+
+         var currentWordChild = Array.from(currentWord.children).reverse()
+         var nextWordChild = Array.from(nextWord.children).reverse()
+         currentWordChild.forEach(function (letter, i) {
+            if (letter.innerHTML != nextWordChild[i].innerHTML)
+               setTimeout(function () {
+                  letter.className = "letter out";
+               }, i * 120);
+         });
+         // reveal and rotate in letters of next word
+         nextWord.style.opacity = "1";
+         nextWordChild.forEach(function (letter, i) {
+            if (letter.innerHTML != currentWordChild[i].innerHTML) {
+               letter.className = "letter behind";
+               setTimeout(function () {
+                  letter.className = "letter in";
+               }, 360 + i * 80);
+            }
+         });
+      };
+
       function refresh () {
          x = 1;  // x = seconds
-         var d = new Date()
-         var h = d.getHours();
-         var m = d.getMinutes();
-         var s = d.getSeconds();
+         let d = new Date()
+         let h = d.getHours();
+         let m = d.getMinutes();
+         let s = d.getSeconds();
 
          // HEX 颜色值代表时间
          // if (h <= 9) { h = '0' + h };
@@ -81,17 +140,25 @@
          let daySeconds = h * 60 * 60 + m * 60 + s
          color = (daySeconds).toString(16)
          color = completeTo6(color)
-
-         var textShadowColor = '#' + color.split("").reverse().join("");
-
-         document.getElementById('hex').style.textShadow = '3px -2px 6px ' + textShadowColor
-
          color = '#' + color
-
          document.getElementById('background').style.backgroundColor = color
-         document.getElementById('hex').innerHTML = color;
+
+         color = packageToSpan(color)
 
          setTimeout(refresh, x * 1000);
+
+         setTimeout(() => {
+            // hidden 变为下一个颜色
+            let colorHidden = document.getElementById('color-hidden')
+            let colorShow = document.getElementById('color-show')
+            colorHidden.innerHTML = color;
+
+            rotateText()
+
+            // hidden 和 show 互换
+            colorHidden.id = 'color-show'
+            colorShow.id = 'color-hidden'
+         }, 0)
       }
 
       refresh(); 
